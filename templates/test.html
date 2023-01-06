@@ -1,0 +1,43 @@
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>First Flask App</title>
+</head>
+<body>
+    <style>
+    form  { display: table;      }
+        p     { display: table-row;  }
+        label { display: table-cell; }
+        input { display: table-cell; }
+        </style>
+    <h1>
+        ODD Interface
+    </h1>
+    <form action="#" method="POST">
+        <p><label for="BLlat">Bottom Left Latitude</label>
+        <input type="number" name="BLlat" step="0.000000001"></p>
+        
+        <p><label for="BLlon">Bottom Left Longitude</label>
+        <input type="number" name="BLlon" step="0.000000001"></p>
+        
+        <p><label for="TRlat">Top Right Latitude</label>
+        <input type="number" name="TRlat" step="0.000000001"></p>
+        
+        <p><label for="TRlon">Top Right Longitude</label>
+        <input type="number" name="TRlon" step="0.000000001"></p>
+        
+        <p><label for="FIPS">ODD FIPS Code</label>
+        <input type="number" name="FIPS"></p>
+        
+        <p><label for="kiosk#"> Number of Kiosks</label>
+        <input type="number" name="kiosk#"></p>
+
+        <p><label for="name">Name</label>
+            <input type="text" name="name"></p>
+        
+        <br>
+        <input type="submit">
+    </form>
+</body>
+</html>

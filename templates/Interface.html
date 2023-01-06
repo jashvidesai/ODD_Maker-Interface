@@ -1,0 +1,17 @@
+<header>Input</header>
+<body>
+    <p>Test</p>
+    <form action="test1">
+     <input type="radio" name="first" id="yes">
+    <label for="yes">Yes</label>
+    <input type="radio" name="first" id="no">
+    <label for="no">Noo</label>   
+    </form>
+    <form action="{{ url_for("stuff")}}" method="post">
+        <label for="firstname">First Name:</label>
+        <input type="text" id="firstname" name="fname" placeholder="firstname">
+        <label for="lastname">Last Name:</label>
+        <input type="text" id="lastname" name="lname" placeholder="lastname">
+        <button type="submit">Login</button>
+    
+</body>
