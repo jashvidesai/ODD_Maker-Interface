@@ -1,43 +1,111 @@
-    <!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>First Flask App</title>
+	<title>Latitude/Longitude Form</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+     integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+     crossorigin=""/>
+	 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.2.3/leaflet.draw.css"
+     crossorigin=""/>
+
+	 
+     <!-- Make sure you put this AFTER Leaflet's CSS -->
+ <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+ integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+ crossorigin=""></script>
+ 
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.2.3/leaflet.draw.js"></script>
 </head>
 <body>
-    <style>
-    form  { display: table;      }
-        p     { display: table-row;  }
-        label { display: table-cell; }
-        input { display: table-cell; }
-        </style>
-    <h1>
-        ODD Interface
-    </h1>
-    <form action="#" method="POST">
-        <p><label for="BLlat">Bottom Left Latitude</label>
-        <input type="number" name="BLlat" step="0.000000001"></p>
-        
-        <p><label for="BLlon">Bottom Left Longitude</label>
-        <input type="number" name="BLlon" step="0.000000001"></p>
-        
-        <p><label for="TRlat">Top Right Latitude</label>
-        <input type="number" name="TRlat" step="0.000000001"></p>
-        
-        <p><label for="TRlon">Top Right Longitude</label>
-        <input type="number" name="TRlon" step="0.000000001"></p>
-        
-        <p><label for="FIPS">ODD FIPS Code</label>
-        <input type="number" name="FIPS"></p>
-        
-        <p><label for="kiosk#"> Number of Kiosks</label>
-        <input type="number" name="kiosk#"></p>
+    
+	<h1>Latitude/Longitude Form</h1>
+	<form method="POST">
+		<label for="shape">stuff</label>
+		<input type="hidden" id="shape" name="shape">
+            
+        <div><!-- Map container -->
+            <div id="map" style="width:600px;height:400px;"></div>
+			
+            <script>
+				var center = [40.34952320809543, -74.65281307697298];
 
-        <p><label for="name">Name</label>
-            <input type="text" name="name"></p>
-        
+				// Create the map
+				var map = L.map('map').setView(center, 6);
+
+				// Set up the OSM layer
+				L.tileLayer(
+				'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+					attribution: 'Data © <a href="http://osm.org/copyright">OpenStreetMap</a>',
+					maxZoom: 18
+				}).addTo(map);
+
+
+
+				// Initialise the FeatureGroup to store editable layers
+				var editableLayers = new L.FeatureGroup();
+				map.addLayer(editableLayers);
+
+				var drawPluginOptions = {
+				position: 'topright',
+				draw: {
+					polygon: {
+					allowIntersection: false, // Restricts shapes to simple polygons
+					drawError: {
+						color: '#e1e100', // Color the shape will turn when intersects
+						message: '<strong>Oh snap!<strong> you can\'t draw that!' // Message that will show when intersect
+					},
+					shapeOptions: {
+						color: '#97009c'
+					}
+					},
+					// disable toolbar item by setting it to false
+					polyline: false,
+					circle: false, // Turns off this drawing tool
+					rectangle: false,
+					marker: true,
+					},
+				edit: {
+					featureGroup: editableLayers, //REQUIRED!!
+					remove: false
+				}
+				};
+
+				// Initialise the draw control and pass it the FeatureGroup of editable layers
+				var drawControl = new L.Control.Draw(drawPluginOptions);
+				map.addControl(drawControl);
+				
+				var editableLayers = new L.FeatureGroup();
+				map.addLayer(editableLayers);
+				
+				map.on('draw:created', function(g) {
+				var type = g.layerType,
+					layer = g.layer;
+				
+				if (type === 'marker') {
+					layer.bindPopup('Airport');
+				}
+				
+
+				editableLayers.addLayer(layer);
+
+
+				var shape = editableLayers.toGeoJSON()
+				var shape_for_db = JSON.stringify(shape);
+
+				
+				document.getElementById("shape").value = shape_for_db;
+
+				});
+
+
+			</script>
+		
+			
         <br>
-        <input type="submit">
-    </form>
+        <br>
+		<input type="submit" value="Submit" id = "submit">
+	</form> 
+	
+	
 </body>
 </html>

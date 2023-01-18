@@ -1,36 +1,161 @@
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html>
 <head>
-    <title></title>
+	<title>Latitude/Longitude Form</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+     integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+     crossorigin=""/>
+     <!-- Make sure you put this AFTER Leaflet's CSS -->
+ <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+ integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+ crossorigin=""></script>
 </head>
 <body>
-    <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
-    <script type="text/javascript">
-        window.onload = function () {
-            var mapOptions = {
-                center: new google.maps.LatLng(40.349447, -74.652802),
-                zoom: 14,
-                mapTypeId: google.maps.MapTypeId.ROADMAP
-            };
+    <style>
+        form  { display: table;      }
+            p     { display: table-row;  }
+            label { display: table-cell; }
+            input { display: table-cell; }
+            </style>
+	<h1>Latitude/Longitude Form</h1>
+	<form method="post">
+		<p><label for="latitude1">Latitude 1:</label></p>
+		<p><input type="text" id="latitude1" name="latitude1" required></p>
+		<p><label for="longitude1">Longitude 1:</label></p>
+		<p><input type="text" id="longitude1" name="longitude1" required></p>
+		
+		<p><label for="latitude2">Latitude 2:</label></p>
+		<p><input type="text" id="latitude2" name="latitude2" required></p>
+		<p><label for="longitude2">Longitude 2:</label></p>
+		<p><input type="text" id="longitude2" name="longitude2" required></p>
+
+       
         
-            var infoWindow = new google.maps.InfoWindow();
-            var latlngbounds = new google.maps.LatLngBounds();
-            var map = new google.maps.Map(document.getElementById("dvMap"), mapOptions);
+        
 
-            google.maps.event.addListener( marker, 'click', function ( event ) {
-                document.getElementById( "maps_latitude" ).value = this.getPosition().lat();
-                document.getElementById( "maps_longitude" ).value = this.getPosition().lng();
-                } );
+            
+        <!-- <p><label for="kiosk#"> Number of Kiosks</label></p>
+        <p><input type="number" name="kiosk#" required></p> -->
+    
+        <p><label for="name">Configuration Name</label></p>
+        <p><input type="text" name="name" required></p>
+        <br>
+            
+        <div><!-- Map container -->
+            <div id="map" style="width:600px;height:400px;"></div>
+            
+            <!-- JavaScript to populate form with latitude/longitude from map clicks -->
+            <script>
+                // Initialize map
+                var map = L.map('map').setView([40.34952320809543, -74.65281307697298], 13);
+                
+                // Add tile layer to map
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: 'Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
+                }).addTo(map);
+                
+                // Initialize counter for map clicks
+                var clickCount = 0;
+                var marker1;
+                var marker2;
+                var seen = false;
+                
+                // Add click event listener to map
+                map.on('click', function(e) {
+                    // Increment click counter
+                    clickCount++;
+                    
+                    // Set form values based on click counter
 
-            // google.maps.event.addListener( marker, 'click', function ( event ) {
-            //     document.getElementById( "maps_latitude" ).value = event.latLng.lat();
-            //     document.getElementById( "maps_longitude" ).value = event.latLng.lng();
-            //     } );
-            // google.maps.event.addListener(map, 'click', function (e) {
-            //     alert("Latitude: " + e.latLng.lat() + "\r\nLongitude: " + e.latLng.lng());
-            // });
-        }
-    </script>
-    <div id="dvMap" style="width: 500px; height: 500px">
-    </div>
+                    if (clickCount === 1) {
+                        if (seen) {
+                            map.removeLayer(marker1)
+                        }
+                        document.getElementById("latitude1").value = e.latlng.lat;
+                        document.getElementById("longitude1").value = e.latlng.lng;
+                        marker1 = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+                    } else if (clickCount === 2) {
+                        if (seen) {
+                            map.removeLayer(marker2)
+                        }
+                        document.getElementById("latitude2").value = e.latlng.lat;
+                        document.getElementById("longitude2").value = e.latlng.lng;
+                        marker2 = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+                        // Reset click counter after second click
+                        clickCount = 0;
+                        seen = true;
+                    }
+                
+                });
+            </script>
+       
+         
+            </div>
+
+        <br>
+        
+        
+        <p>Take trips which would be considered flights?</p>
+        <p><label for="Yes">Yes</label></p>
+        <input type="radio" id="Yes" name="takeFlights" value="true" required>
+        <p><label for="No">No</label></p>
+        <input type="radio" id="No" name="takeFlights" value="false" required> 
+        
+        <br><br><br>
+        
+        <p>If yes fill out bellow, else disregard below fields.</p>
+        <br>
+
+
+
+        <p><label for="airLat">Airport Latitude:</label></p>
+		<p><input type="text" id="airLat" name="airLat" required></p>
+
+		<p><label for="airLon">Airport Longitude:</label></p>
+		<p><input type="text" id="airLon" name="airLon" required></p>
+		
+        <p><label for="flightDistance"> Minimum Distance Trip to be Conisidered a Flight (Miles)</label></p>
+        <p><input type="number" name="flightDistance" required></p>
+
+
+        <br>
+        <br>
+        <div><!-- Map container -->
+            <div id="map3" style="width:600px;height:400px;"></div>
+        
+            <!-- JavaScript to populate form with latitude/longitude from map clicks -->
+            <script>
+                // Initialize map
+                var map3 = L.map('map3').setView([40.34952320809543, -74.65281307697298], 13);
+                
+                // Add tile layer to map
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: 'Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
+                }).addTo(map3);
+                
+                var marker3;
+                var click_count = 0;
+                
+                
+                // Add click event listener to map
+                map3.on('click', function(f) {
+                    if (click_count !== 0) {
+                         map3.removeLayer(marker3)
+                    }
+                    document.getElementById("airLat").value = f.latlng.lat;
+                    document.getElementById("airLon").value = f.latlng.lng;
+                    marker3 = L.marker([f.latlng.lat, f.latlng.lng]).addTo(map3);
+                    click_count++;
+                
+                });
+            </script>
+                
+            </div>
+        <br>
+        <br>
+		<input type="submit" value="Submit">
+	</form> 
+	
+	
 </body>
 </html>

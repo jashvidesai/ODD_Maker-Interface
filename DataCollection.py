@@ -12,6 +12,9 @@ import datetime
 import time
 from geopy.geocoders import Nominatim
 import random
+import requests
+import urllib
+from shapely.geometry import Polygon as P, shape
 
 
 
@@ -27,7 +30,7 @@ def stationsearch(lat, long):
       return True
   return False
 
-def countyCheck():
+def countyCheck(Additional_Countys_Fips):
   if len(Additional_Countys_Fips) == 0:
     return False
   for a in Additional_Countys_Fips:
@@ -51,6 +54,61 @@ def toFips(state):
 def format_Numbers(number):
   return "{:,.0f}".format(number)
 
+
+def getArea(Polygon_Area):
+   lng1, lat1, lng2, lat2 = Polygon_Area.bounds
+   x1, y1 = toCord(lat1,lng2)
+   
+
+   
+   x2, y2 = toCord(lat2,lng1)
+
+   
+
+   
+   pixels = []
+   allpixels = []
+   
+   for x in range(x2,x1):
+    for y in range(y1,y2):
+        allpixels.append((x,y))
+        
+   
+   
+
+
+
+
+   for x in allpixels:
+    i = x[0]
+    j = x[1]
+    bottom_left_lat = 37.0 + 0.00722814*(j)
+    bottom_left_lng = -97.5 + 0.00722814*(i)/math.cos(math.radians(bottom_left_lat))
+    bottom_left = (bottom_left_lng, bottom_left_lat)
+
+    bottom_right_lat = 37.0 + 0.00722814*(j)
+    bottom_right_lng = -97.5 + 0.00722814*(i+1)/math.cos(math.radians(bottom_right_lat))
+    bottom_right = (bottom_right_lng, bottom_right_lat)
+
+    top_right_lat = 37.0 + 0.00722814*(j+1)
+    top_right_lng = -97.5 + 0.00722814*(i+1)/math.cos(math.radians(top_right_lat))
+    top_right = (top_right_lng, top_right_lat)
+
+    top_left_lat = 37.0 + 0.00722814*(j+1)
+    top_left_lng = -97.5 + 0.00722814*(i)/math.cos(math.radians(top_left_lat))
+    top_left = (top_left_lng, top_left_lat)
+
+    
+
+    pixel = P([bottom_left, bottom_right, top_right, top_left])
+    if Polygon_Area.intersects(pixel):
+        pixels.append((i,j))
+    
+   return pixels
+    
+
+
+
 Fips_Code = {"Alabama":1,"Alaska":2,"Arizona":4,"Arkansas":5,"California":6,"Colorado":8,"Connecticut":9,"Delaware":10,"Florida":12,"Georgia":13,"Hawaii":15,
 "Idaho":16,"Illinois":17,"Indiana":18,"Iowa":19,"Kansas":20,"Kentucky":21,"Louisiana":22,"Maine":23,"Maryland":24,"Massachusetts":25,"Michigan":26,
 "Minnesota":27,"Mississippi":28,"Missouri":29,"Montana":30,"Nebraska":31,"Nevada":32,"New Hampshire":33,"New Jersey":34,"New Mexico":35,"New York":36,
@@ -65,29 +123,21 @@ Fips_Code = {"Alabama":1,"Alaska":2,"Arizona":4,"Arkansas":5,"California":6,"Col
 
 # Takes input from Interface
 
-def main(BL_Latitude, BL_Longitude, TR_Latidude, TR_Longitude, FIPS, KioskNumber, Name):
+def main(shape, Flights, MinFlightDist, Name):
 
     print("got to main")
 
+    for x in range(0,len(shape["features"])):
+        if shape["features"][x]["geometry"]["type"] == "Point":
+            ODD_AirPort_Location = shape["features"][x]["geometry"]["coordinates"][0] # may need to do this by hand and reverse
+        elif shape["features"][x]["geometry"]["type"] == "Polygon":
+            S_Polygon = P(shape["features"][x]["geometry"]["coordinates"][0])
+            
 
     # Sets starting pixels to be examined
-    pixels_start = []
-    bottom_leftx, bottom_lefty = toCord(BL_Latitude, BL_Longitude)
-    top_rightx, top_righty = toCord(TR_Latidude, TR_Longitude)
+    pixels_start = getArea(S_Polygon)
+       
 
-    print(BL_Latitude)
-    print(TR_Latidude)
-
-    print(bottom_leftx)
-    print(bottom_lefty)
-    print(top_rightx)
-    print(top_righty)
-
-
-    for x in range(bottom_leftx,top_rightx):
-        for y in range(bottom_lefty,top_righty):
-            pixels_start.append((x,y))
-            print((x,y))
 
 
     # Initializes Input
@@ -104,13 +154,13 @@ def main(BL_Latitude, BL_Longitude, TR_Latidude, TR_Longitude, FIPS, KioskNumber
     #directory = "NEC to Trenton Trips\memtest"
     GetLocal = True
     GetTrain = False
-    ODD_Fips_string = [str(FIPS)]
-    ODD_Fips_number = [FIPS]
-    ODD_Airport = False
+    ODD_Fips_string = []
+    ODD_Fips_number = []
+    ODD_Airport = Flights
     Train_Airport = False
-    ODD_AirPort_Location = (35.046724, -89.981745)
+    # ODD_AirPort_Location = (float(AirportLat), float(AirportLon))
     Home_Station_Name = "TRENTON"
-    Kiosk_Number = KioskNumber
+    # Kiosk_Number = KioskNumber
     getOutDriving = False
     #All_Stations = pd.read_csv("C:/Users/hawke/OneDrive/Documents/Trenton Moves/FilteredTransitStations.csv")
     Stations = []
@@ -145,6 +195,41 @@ def main(BL_Latitude, BL_Longitude, TR_Latidude, TR_Longitude, FIPS, KioskNumber
     lst_pixels = []
     lst_pixels_forCOM = []
 
+
+# Gets fips codes from corners
+    lng1, lat1, lng2, lat2 = S_Polygon.bounds
+    corners = [(lat1, lng1),(lat2, lng2),(lat1,lng2),(lat2,lng1)]
+    tempFips = []
+    for x in corners:
+
+        lat = x[0]
+        lon = x[1]
+
+        print("Lat: " + str(lat))
+        print("Lng: " + str(lon))
+
+        #Contruct request URL
+        url = 'https://geo.fcc.gov/api/census/block/find?latitude=' + str(lat) + "&longitude=" + str(lon) + "&format=json"
+
+       
+
+        #Get response from API
+        response = None
+        while str(response) != "<Response [200]>":
+            response = requests.get(url)
+    
+
+        #Parse json in response
+        data = response.json()
+
+        #Print FIPS code
+        tempFips.append(data['County']['FIPS'])
+    
+    tempFips = list(OrderedDict.fromkeys(tempFips)) 
+    for x in tempFips:
+        print("test: " + str(x))
+        ODD_Fips_string.append(str(x))
+        ODD_Fips_number.append(int(x))
 
 
 
@@ -205,7 +290,7 @@ def main(BL_Latitude, BL_Longitude, TR_Latidude, TR_Longitude, FIPS, KioskNumber
                                         sheet['RailLink_Station'][x] = station
                                         sheet['RailLink_Line'][x] = line
                                         continue
-                                if countyCheck():
+                                if countyCheck(Additional_Countys_Fips):
                                     xcoord,ycoord = toCord(Home_station[9],Home_station[8])
                                     sheet['OGlobalLat'][x] = row.OLat
                                     sheet['OGlobalLon'][x] = row.OLon
@@ -221,7 +306,7 @@ def main(BL_Latitude, BL_Longitude, TR_Latidude, TR_Longitude, FIPS, KioskNumber
                                     sheet['RailLink_Station'][x] = station
                                     sheet['RailLink_Line'][x] = line
                                 if ODD_Airport or Train_Airport: 
-                                    if row.GCDistance > 250:
+                                    if row.GCDistance > int(MinFlightDist):
                                         sheet['OriginFile'][x] = f
                                         if ODD_Airport:
                                             lat = ODD_AirPort_Location[0]
@@ -305,43 +390,43 @@ def main(BL_Latitude, BL_Longitude, TR_Latidude, TR_Longitude, FIPS, KioskNumber
     Data = pd.concat(Final)   
 
 
-    AllEndpoint_Pixels = []
-    for row in Data.itertuples():
-        AllEndpoint_Pixels.append((row.OXCoord,row.OYCoord))
-        AllEndpoint_Pixels.append((row.DXCoord,row.DYCoord))
-    Endpoint_PixelList = list(OrderedDict.fromkeys(AllEndpoint_Pixels))
+    # AllEndpoint_Pixels = []
+    # for row in Data.itertuples():
+    #     AllEndpoint_Pixels.append((row.OXCoord,row.OYCoord))
+    #     AllEndpoint_Pixels.append((row.DXCoord,row.DYCoord))
+    # Endpoint_PixelList = list(OrderedDict.fromkeys(AllEndpoint_Pixels))
 
-    Pixels_with_Count = []
-    ODD_Pixels = []
-    for a in Endpoint_PixelList:
-        Pixels_with_Count.append((a,AllEndpoint_Pixels.count(a)))
-    Pixels_with_Count.sort(key = lambda x: x[1],reverse=True)
+    # Pixels_with_Count = []
+    # ODD_Pixels = []
+    # for a in Endpoint_PixelList:
+    #     Pixels_with_Count.append((a,AllEndpoint_Pixels.count(a)))
+    # Pixels_with_Count.sort(key = lambda x: x[1],reverse=True)
  
 
-    for h in range(0,len(pixels_start)): # put back to (0,Kiosk_Number) later
-        ODD_Pixels.append(Pixels_with_Count[h][0])
-    if ODD_Airport:
-        if toCord(ODD_AirPort_Location[0],ODD_AirPort_Location[1]) not in ODD_Pixels:
-            ODD_Pixels = ODD_Pixels[0:Kiosk_Number-1]
-            ODD_Pixels.append(toCord(ODD_AirPort_Location[0],ODD_AirPort_Location[1]))
+    # for h in range(0,Kiosk_Number): # put back to (0,Kiosk_Number) later
+    #     ODD_Pixels.append(Pixels_with_Count[h][0])
+    # if ODD_Airport:
+    #     if toCord(ODD_AirPort_Location[0],ODD_AirPort_Location[1]) not in ODD_Pixels:
+    #         ODD_Pixels = ODD_Pixels[0:Kiosk_Number-1]
+    #         ODD_Pixels.append(toCord(ODD_AirPort_Location[0],ODD_AirPort_Location[1]))
 
     Data.to_csv("data/" + str(Name) + "_ALLtripsExtended.csv")
 
 
-    Data['Take'] = pd.NaT
-    Data.reset_index(inplace = True, drop = True)
-    b = 0
-    for row in Data.itertuples():
-        dpoint = (row.DXCoord,row.DYCoord)
-        opoint = (row.OXCoord,row.OYCoord)
-        if opoint in ODD_Pixels and dpoint in ODD_Pixels:
-            Data['Take'][b] = 1
-        else:
-            Data['Take'][b] = 0
-        b = b + 1
-    NewDriving = Data[(Data.Take == 0)]
-    Data = Data[(Data.Take == 1)]
-    Data.to_csv("data/" + str(Name) + "_Top_" + str(KioskNumber) + ".csv")
+    # Data['Take'] = pd.NaT
+    # Data.reset_index(inplace = True, drop = True)
+    # b = 0
+    # for row in Data.itertuples():
+    #     dpoint = (row.DXCoord,row.DYCoord)
+    #     opoint = (row.OXCoord,row.OYCoord)
+    #     if opoint in ODD_Pixels and dpoint in ODD_Pixels:
+    #         Data['Take'][b] = 1
+    #     else:
+    #         Data['Take'][b] = 0
+    #     b = b + 1
+    # NewDriving = Data[(Data.Take == 0)]
+    # Data = Data[(Data.Take == 1)]
+    # Data.to_csv("data/" + str(Name) + "_Top_" + str(KioskNumber) + ".csv")
     Data.rename(columns = {'Trip Type':'Trip_Type'}, inplace = True)
 
 
@@ -375,6 +460,7 @@ def main(BL_Latitude, BL_Longitude, TR_Latidude, TR_Longitude, FIPS, KioskNumber
 
     lst_pixels = list(OrderedDict.fromkeys(lst_pixels))
     for x in lst_pixels:
+        
         i = x[0]
         j = x[1]
         O_Count = origins.count((i,j))
@@ -415,7 +501,7 @@ def main(BL_Latitude, BL_Longitude, TR_Latidude, TR_Longitude, FIPS, KioskNumber
         lst_features.append(new_feature)
 
     feature_collection = FeatureCollection(lst_features)
-    with open("data/" + str(Name) + "_Pixels_" + str(KioskNumber) + ".geojson", "w") as outfile:
+    with open("data/" + str(Name) + "_Pixels_" + ".geojson", "w") as outfile:
         json.dump(feature_collection, outfile)
 
     lst_pixels_forCOM = list(OrderedDict.fromkeys(lst_pixels_forCOM))
@@ -427,8 +513,18 @@ def main(BL_Latitude, BL_Longitude, TR_Latidude, TR_Longitude, FIPS, KioskNumber
         pixel_data_destinations = Data[(Data.DXCoord == i)]
         pixel_data_destinations = pixel_data_destinations[(pixel_data_destinations.DYCoord == j)]
 
-        center_of_mass_lat = (pixel_data_origins['OLat'].mean() + pixel_data_destinations["DLat"].mean())/2
-        center_of_mass_lon = (pixel_data_origins['OLon'].mean() + pixel_data_destinations["DLon"].mean())/2
+
+
+
+        if pixel_data_origins.empty:
+            center_of_mass_lat = (pixel_data_destinations["DLat"].mean())
+            center_of_mass_lon = (pixel_data_destinations["DLon"].mean())
+        elif pixel_data_destinations.empty:
+            center_of_mass_lat = (pixel_data_origins['OLat'].mean())
+            center_of_mass_lon = (pixel_data_origins['OLon'].mean())
+        else:
+            center_of_mass_lat = (pixel_data_origins['OLat'].mean() + pixel_data_destinations["DLat"].mean())/2
+            center_of_mass_lon = (pixel_data_origins['OLon'].mean() + pixel_data_destinations["DLon"].mean())/2
         Centers_of_Mass[(i,j)] = (center_of_mass_lat,center_of_mass_lon)
         center = Point((center_of_mass_lon,center_of_mass_lat))
 
@@ -439,14 +535,14 @@ def main(BL_Latitude, BL_Longitude, TR_Latidude, TR_Longitude, FIPS, KioskNumber
             distances_from_COM.append(hs.haversine((center_of_mass_lat,center_of_mass_lon),(row.DLat,row.DLon),unit=hs.Unit.MILES))
         distances_from_COM.sort()
 
-        lst_feature_centerofmass.append(Feature(geometry=center, properties={"Pixel": (i,j), "Number of Endpoints": len(pixel_data_origins) + 
-        len(pixel_data_destinations), "Cum. Dist. at 10%": distances_from_COM[math.floor(len(distances_from_COM)*.1)],"Cum. Dist. at 50%": 
-        distances_from_COM[math.floor(len(distances_from_COM)*.5)],"Cum. Dist. at 90%": distances_from_COM[math.floor(len(distances_from_COM)*.9)]}))
+        lst_feature_centerofmass.append(Feature(geometry=center, properties={"Pixel": (i,j), "Number of PersonTrips": len(pixel_data_origins) + 
+        len(pixel_data_destinations), "Cum. Dist. at 10% (Miles)": distances_from_COM[math.floor(len(distances_from_COM)*.1)],"Cum. Dist. at 50% (Miles)": 
+        distances_from_COM[math.floor(len(distances_from_COM)*.5)],"Cum. Dist. at 90% (Miles)": distances_from_COM[math.floor(len(distances_from_COM)*.9)]}))
 
 
 
     feature_collection_centerofmass = FeatureCollection(lst_feature_centerofmass)
-    with open("data/" + str(Name) + "_" + str(Kiosk_Number) + "_pixelCOMs.geojson", "w") as outfile:
+    with open("data/" + str(Name) + "_pixelCOMs.geojson", "w") as outfile:
         json.dump(feature_collection_centerofmass, outfile)
 
     station_points = []
