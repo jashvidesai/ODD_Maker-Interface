@@ -3,115 +3,21 @@
 <html>
     <head>
         <title>MOVES Planning Data Input Form</title>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
-         integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
-         crossorigin=""/>
-         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.2.3/leaflet.draw.css"
-         crossorigin=""/>
-    
-         
-         <!-- Make sure you put this AFTER Leaflet's CSS -->
-     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
-     integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
-     crossorigin=""></script>
-     
-     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.2.3/leaflet.draw.js"></script>
+       
     </head>
 <body>
 	<h1>MOVES Planning Data Input Form</h1>
-	<form method="post">
-		
-       <br>
-        <input type="hidden" id="shape" name="shape">
-        <p><label for="name">Configuration Name</label></p>
-        <p><input type="text" name="name" required></p>
-        
-        <p style="color:red;">Invalid area input, please only draw 1 area and if taking flights only mark 1 location.</p>
-        <p>To select area of operation draw area using "Draw Polygon" button on top right of map. If you would like 
-            to include flights please place a marker at the drop off position of your local airport. If chosing this 
-            option please select the minimum total distance of a trip for it to be considered.(Recommend: 300-400 miles)
-        </p>
-        <br>
-            
-        <div><!-- Map container -->
-            <div id="map" style="width:600px;height:400px;"></div>
-            
-            <script>
-				// Create the map
-				var map = L.map('map').setView([40.34952320809543, -74.65281307697298], 13);
-
-				// Set up the OSM layer
-				L.tileLayer(
-				'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-					attribution: 'Data © <a href="http://osm.org/copyright">OpenStreetMap</a>',
-					maxZoom: 18
-				}).addTo(map);
-
-				// Initialise the FeatureGroup to store editable layers
-				var editableLayers = new L.FeatureGroup();
-				map.addLayer(editableLayers);
-
-				var drawPluginOptions = {
-				position: 'topright',
-				draw: {
-					polygon: {
-					allowIntersection: false, // Restricts shapes to simple polygons
-					drawError: {
-						color: '#e1e100', // Color the shape will turn when intersects
-						message: '<strong>Oh snap!<strong> you can\'t draw that!' // Message that will show when intersect
-					},
-					shapeOptions: {
-						color: '#97009c'
-					}
-					},
-					// disable toolbar item by setting it to false
-					polyline: false,
-					circle: false, // Turns off this drawing tool
-					rectangle: false,
-					marker: true,
-					},
-				edit: {
-					featureGroup: editableLayers, //REQUIRED!!
-					remove: false
-				}
-				};
-
-				// Initialise the draw control and pass it the FeatureGroup of editable layers
-				var drawControl = new L.Control.Draw(drawPluginOptions);
-				map.addControl(drawControl);
-				
-				var editableLayers = new L.FeatureGroup();
-				map.addLayer(editableLayers);
-				
-				map.on('draw:created', function(g) {
-				var type = g.layerType,
-					layer = g.layer;
-				
-				if (type === 'marker') {
-					layer.bindPopup('Airport');
-				}
-				
-				editableLayers.addLayer(layer);
-
-				var shape = editableLayers.toGeoJSON()
-				var shape_for_db = JSON.stringify(shape);
-
-				
-				document.getElementById("shape").value = shape_for_db;
-				});
-			</script>
-        </div>
-        <br>
-		
-        <p><label for="flightDistance"> Minimum Distance Trip to be Conisidered a Flight (Miles)</label></p>
-        <p><input type="number" name="flightDistance" value="0"></p>
-
-        <br>
-        <br>
-
-		<input type="submit" value="Submit">
-	</form> 
 	
+	<!-- <iframe src="https://unfoldeddev.static.observableusercontent.com/next/worker-00838639.html" 
+	  style="width: calc(100% + 28px); margin: 0px -14px; border: none; height: 5115px;">
+	<script>import {unfoldedMap} from "@unfoldeddev/map-layers"</script>
+	</iframe> -->
+	
+
+	<script src="https://unpkg.com/@unfolded.gl/studio@latest/dist/studio.js">
+		const studio = new UnfoldedStudio();
+	</script>
+
 	
 </body>
 </html>

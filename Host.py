@@ -1,8 +1,8 @@
 from flask import Flask, render_template, request, redirect
 import DataCollection
-import conversiontest
 from geojson import Feature, FeatureCollection, Point
 import json
+import time
 
 global test
 
@@ -10,6 +10,7 @@ app = Flask(__name__)
 @app.route('/', methods = ["POST","GET"])
 def test():
     if request.method == "POST":
+        start = time.perf_counter()
         Name = request.form["name"]
         with open('data/Data_List.txt') as f:
             lines = f.readlines()
@@ -33,6 +34,8 @@ def test():
         DataCollection.main(shape,Flights,FlightDistance,Name)
         with open('data/Data_List.txt', 'a') as f:
             f.write(","+ str(Name))
+        stop = time.perf_counter()
+        print("Runtime: " + str(stop-start))
         return render_template("Successful_submission.html")
     return render_template("map2.html")
 
@@ -54,7 +57,7 @@ def airport():
             return render_template("test2.html")
 
         return render_template("test.html")
-    else: return render_template("test.html")
+    else: return render_template("test2.html")
 
 
         
