@@ -257,7 +257,7 @@ def main(shape, Flights, MinFlightDist, Name):
                 if name in ODD_Fips_string:
                     sheet = pd.read_csv(f)
                     print(f)
-                    x = 1
+                    x = -1
                     sheet['OriginFile'] = pd.NaT
                     sheet['OGlobalLat'] = pd.NaT
                     sheet['OGlobalLon'] = pd.NaT
