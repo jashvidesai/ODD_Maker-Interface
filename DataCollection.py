@@ -58,12 +58,7 @@ def format_Numbers(number):
 def getArea(Polygon_Area):
    lng1, lat1, lng2, lat2 = Polygon_Area.bounds
    x1, y1 = toCord(lat1,lng2)
-   
-
-   
    x2, y2 = toCord(lat2,lng1)
-
-   
 
    
    pixels = []
@@ -72,11 +67,6 @@ def getArea(Polygon_Area):
    for x in range(x2,x1):
     for y in range(y1,y2):
         allpixels.append((x,y))
-        
-   
-   
-
-
 
 
    for x in allpixels:
@@ -205,8 +195,6 @@ def main(shape, Flights, MinFlightDist, Name):
         lat = x[0]
         lon = x[1]
 
-        print("Lat: " + str(lat))
-        print("Lng: " + str(lon))
 
         #Contruct request URL
         url = 'https://geo.fcc.gov/api/census/block/find?latitude=' + str(lat) + "&longitude=" + str(lon) + "&format=json"
@@ -223,11 +211,12 @@ def main(shape, Flights, MinFlightDist, Name):
         data = response.json()
 
         #Print FIPS code
+        if (data['County']['FIPS'] == None): continue
         tempFips.append(data['County']['FIPS'])
+        print(data['County']['FIPS'])
     
     tempFips = list(OrderedDict.fromkeys(tempFips)) 
     for x in tempFips:
-        print("test: " + str(x))
         ODD_Fips_string.append(str(x))
         ODD_Fips_number.append(int(x))
 
@@ -257,7 +246,7 @@ def main(shape, Flights, MinFlightDist, Name):
                 if name in ODD_Fips_string:
                     sheet = pd.read_csv(f)
                     print(f)
-                    x = 1
+                    x = -1
                     sheet['OriginFile'] = pd.NaT
                     sheet['OGlobalLat'] = pd.NaT
                     sheet['OGlobalLon'] = pd.NaT
@@ -390,14 +379,17 @@ def main(shape, Flights, MinFlightDist, Name):
     Data = pd.concat(Final)   
 
 
-    # AllEndpoint_Pixels = []
-    # for row in Data.itertuples():
-    #     AllEndpoint_Pixels.append((row.OXCoord,row.OYCoord))
-    #     AllEndpoint_Pixels.append((row.DXCoord,row.DYCoord))
-    # Endpoint_PixelList = list(OrderedDict.fromkeys(AllEndpoint_Pixels))
+    AllEndpoint_Pixels = []
+    for row in Data.itertuples():
+        AllEndpoint_Pixels.append((row.OXCoord,row.OYCoord))
+        AllEndpoint_Pixels.append((row.DXCoord,row.DYCoord))
+    Endpoint_PixelList = list(OrderedDict.fromkeys(AllEndpoint_Pixels))
 
-    # Pixels_with_Count = []
-    # ODD_Pixels = []
+    Pixels_with_Count = []
+    ODD_Pixels = []
+    for x in Endpoint_PixelList:
+        if AllEndpoint_Pixels.count(x) >950:
+            ODD_Pixels.append(x)
     # for a in Endpoint_PixelList:
     #     Pixels_with_Count.append((a,AllEndpoint_Pixels.count(a)))
     # Pixels_with_Count.sort(key = lambda x: x[1],reverse=True)
@@ -410,27 +402,30 @@ def main(shape, Flights, MinFlightDist, Name):
     #         ODD_Pixels = ODD_Pixels[0:Kiosk_Number-1]
     #         ODD_Pixels.append(toCord(ODD_AirPort_Location[0],ODD_AirPort_Location[1]))
 
+    
+
+
+    Data['Take'] = pd.NaT
+    Data.reset_index(inplace = True, drop = True)
+    b = 0
+    for row in Data.itertuples():
+        dpoint = (row.DXCoord,row.DYCoord)
+        opoint = (row.OXCoord,row.OYCoord)
+        if opoint in ODD_Pixels and dpoint in ODD_Pixels:
+            Data['Take'][b] = 1
+        else:
+            Data['Take'][b] = 0
+        b = b + 1
+    # NewDriving = Data[(Data.Take == 0)]
+    Data = Data[(Data.Take == 1)]
+    # Data.to_csv("data/" + str(Name) + "_Top_" + str(KioskNumber) + ".csv")
+
     Data.to_csv("data/" + str(Name) + "_ALLtripsExtended.csv")
 
-
-    # Data['Take'] = pd.NaT
-    # Data.reset_index(inplace = True, drop = True)
-    # b = 0
-    # for row in Data.itertuples():
-    #     dpoint = (row.DXCoord,row.DYCoord)
-    #     opoint = (row.OXCoord,row.OYCoord)
-    #     if opoint in ODD_Pixels and dpoint in ODD_Pixels:
-    #         Data['Take'][b] = 1
-    #     else:
-    #         Data['Take'][b] = 0
-    #     b = b + 1
-    # NewDriving = Data[(Data.Take == 0)]
-    # Data = Data[(Data.Take == 1)]
-    # Data.to_csv("data/" + str(Name) + "_Top_" + str(KioskNumber) + ".csv")
     Data.rename(columns = {'Trip Type':'Trip_Type'}, inplace = True)
 
 
-
+    
 
 
 
